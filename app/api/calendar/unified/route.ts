@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getEvents } from '@/lib/googleCalendar'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const now = new Date()
   const timeMin = now.toISOString()
@@ -16,7 +18,7 @@ export async function GET() {
   }
   
   // Supabase tasks with due dates
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: tasks } = await supabase
     .from('tasks')
     .select('*, columns!inner(name)')

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // GET /api/notes - List all notes
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   const { data, error } = await supabase
     .from('notes')
@@ -22,7 +22,7 @@ export async function GET() {
 
 // POST /api/notes - Create a new note
 export async function POST(request: Request) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   try {
     const body = await request.json()

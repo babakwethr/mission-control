@@ -1,0 +1,13 @@
+
+> mission-control@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://72.61.255.229:3000
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 3.8s
+○ Compiling / ...
+ HEAD / 200 in 3.5s (compile: 3.3s, render: 211ms)

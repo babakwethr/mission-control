@@ -1,0 +1,21 @@
+
+> mission-control@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://72.61.255.229:3000
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 2.7s
+ HEAD / 200 in 1630ms (compile: 1233ms, render: 397ms)
+ GET / 200 in 68ms (compile: 9ms, render: 59ms)
+⚠ Cross origin request detected from 72.61.255.229 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /projects 200 in 129ms (compile: 84ms, render: 45ms)
+ GET / 200 in 48ms (compile: 4ms, render: 44ms)
+ GET /projects 200 in 20ms (compile: 3ms, render: 17ms)
+ GET /kanban 200 in 179ms (compile: 160ms, render: 19ms)
+ GET /tasks 200 in 62ms (compile: 47ms, render: 15ms)
+ GET /activity 200 in 68ms (compile: 50ms, render: 18ms)

@@ -1,18 +1,31 @@
 // Telegram Bot for Mission Control
 // Natural Language Input: tasks, events, notes
 
-import TelegramBot from 'node-telegram-bot-api'
-import { createClient } from '@supabase/supabase-js'
+// Only import on server-side to avoid build errors
+let TelegramBot: any = null
+let bot: any = null
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8586701093:AAEAnW_jSkpjM7-UXSZNefMeXCPjOpedrEU'
 
-// Initialize bot with webhook mode (more reliable)
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { webhook: true })
+// Initialize bot lazily (only when actually used)
+function getBot() {
+  if (typeof window !== 'undefined') return null // Browser - don't initialize
+  if (!bot) {
+    try {
+      // Dynamic import to avoid build errors
+      const module = require('node-telegram-bot-api')
+      TelegramBot = module.default || module
+      bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { webhook: true })
+    } catch (e) {
+      console.log('Telegram bot not available:', e)
+    }
+  }
+  return bot
+}
 
 // Initialize Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gpodwzygslwewlzguqdm.supabase.co'
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export interface ParsedInput {
   type: 'task' | 'event' | 'note' | 'unknown'
@@ -37,7 +50,7 @@ export function parseNaturalLanguage(text: string): ParsedInput {
   const duePatterns = [
     { regex: /(.+?)\s+due\s+(.+)/i, dateGroup: 2, titleGroup: 1 },
     { regex: /(.+?)\s+by\s+(.+)/i, dateGroup: 2, titleGroup: 1 },
-    { regex: /(.+?)\s+on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i, dateGroup: 2, titleGroup: 1 },
+    { regex: /(.+?)\s+(on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday))/i, dateGroup: 3, titleGroup: 1 },
   ]
   
   for (const pattern of duePatterns) {
@@ -56,21 +69,9 @@ export function parseNaturalLanguage(text: string): ParsedInput {
     }
   }
   
-  // Event patterns: "meeting at 3pm", "call john tomorrow at 2pm", "lunch at noon"
-  const eventPatterns = [
-    { regex: /(.+?)\s+(at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i },
-    { regex: /(.+?)\s+(tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+(at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i },
-  ]
-  
-  for (const pattern of eventPatterns) {
-    const match = text.match(pattern.regex)
-    if (match) {
-      return {
-        type: 'event',
-        title: match[1].trim(),
-        dateTime: match[2].trim()
-      }
-    }
+  // Event patterns
+  if (/\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i.test(text)) {
+    return { type: 'event', title: text, dateTime: text }
   }
   
   // Priority prefixes
@@ -83,7 +84,15 @@ export function parseNaturalLanguage(text: string): ParsedInput {
 }
 
 export async function handleTelegramMessage(msg: any): Promise<string> {
-  const chatId = msg.chat.id
+  // Skip if no Supabase configured
+  if (!supabaseUrl || !supabaseKey) {
+    return 'Supabase not configured'
+  }
+  
+  const { createClient } = require('@supabase/supabase-js')
+  const supabase = createClient(supabaseUrl, supabaseKey)
+  
+  const chatId = msg.chat?.id
   const text = msg.text
   
   if (!text || text.startsWith('/')) {
@@ -96,7 +105,6 @@ export async function handleTelegramMessage(msg: any): Promise<string> {
   try {
     switch (parsed.type) {
       case 'task': {
-        // Find default project or create task without project
         const { data: projects } = await supabase
           .from('projects')
           .select('id')
@@ -132,7 +140,6 @@ export async function handleTelegramMessage(msg: any): Promise<string> {
       }
       
       case 'event': {
-        // For now, create a task with event info - full GCal integration later
         const { error } = await supabase.from('tasks').insert({
           title: `📅 ${parsed.title}`,
           priority: 'Medium',
@@ -143,7 +150,7 @@ export async function handleTelegramMessage(msg: any): Promise<string> {
         
         if (error) throw error
         
-        return `📅 Event noted: "${parsed.title}" at ${parsed.dateTime}`
+        return `📅 Event noted: "${parsed.title}"`
       }
       
       default:

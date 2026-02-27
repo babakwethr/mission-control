@@ -8,7 +8,7 @@ export async function GET() {
   const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
   
   // Google Calendar events (if configured)
-  let gcalEvents = []
+  let gcalEvents: any[] = []
   try {
     gcalEvents = await getEvents(timeMin, timeMax)
   } catch (e) {
